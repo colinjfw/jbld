@@ -12,8 +12,7 @@ type Import struct {
 
 // Source represents a source file.
 type Source struct {
-	Src     string   `json:"src"`
-	Dst     string   `json:"dst"`
+	Name    string   `json:"name"`
 	Plugins []string `json:"plugins"`
 }
 
@@ -27,15 +26,26 @@ type Object struct {
 	Plugins []string `json:"plugins"`
 }
 
+// Config represents a compiler configuration.
+type Config struct {
+	HostJS      string   `json:"hostJS"`
+	ConfigFile  string   `json:"configFile"`
+	Entrypoints []string `json:"entrypoints"`
+	SourceDir   string   `json:"sourceDir"`
+	OutputDir   string   `json:"outputDir"`
+	Plugins     []string `json:"plugins"`
+	Workers     int      `json:"workers"`
+}
+
 // File holds a compiled file.
 type File struct {
-	Object
 	Source
+	Object Object `json:"object"`
 }
 
 // ImportFiles represents a list of all named imports.
 func (f File) ImportFiles() (out []string) {
-	for _, i := range f.Imports {
+	for _, i := range f.Object.Imports {
 		out = append(out, i.Resolved)
 	}
 	return

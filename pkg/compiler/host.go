@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"os/exec"
-	"path/filepath"
 	"sync"
 )
 
@@ -18,16 +17,14 @@ type Host interface {
 }
 
 // NewHost initializes a new host.
-func NewHost(js, config string) Host {
+func NewHost(c Config) Host {
 	return &host{
-		js:     js,
-		config: config,
+		config: c,
 	}
 }
 
 type host struct {
-	js     string
-	config string
+	config Config
 	lock   sync.Mutex
 	stdin  io.Writer
 	stdout *bufio.Reader
@@ -45,11 +42,12 @@ func (h *host) open() error {
 		return nil
 	}
 
-	conf, err := filepath.Abs(h.config)
+	arg, err := json.Marshal(h.config)
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command("node", h.js, conf)
+
+	cmd := exec.Command("node", h.config.HostJS, string(arg))
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		return err

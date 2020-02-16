@@ -1,12 +1,15 @@
 const babel = require("@babel/core");
+const path = require('path');
 const importVisitor = require("babel-plugin-import-visitor");
+const resolveFrom = require('resolve-from');
 
 class BabelPlugin {
   constructor(opts) {
     this.opts = opts;
   }
 
-  run(code) {
+  run(code, file) {
+    const search = path.dirname(file.src);
     const imports = [];
     const opts = {
       ...this.opts,
@@ -14,7 +17,7 @@ class BabelPlugin {
         importVisitor(node => {
           imports.push({
             name: node.value,
-            resolved: node.value + ".js",
+            resolved: resolveFrom(search, node.value).replace(file.srcDir+"/", ""),
             kind: 'static',
           });
         }),

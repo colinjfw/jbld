@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"os"
 	"sync"
 	"testing"
 
@@ -8,12 +9,14 @@ import (
 )
 
 func TestHostPool(t *testing.T) {
-	h := &hostPool{
-		count:  3,
-		js:     "../../js/host.js",
-		config: "./testdata/config.jsbld.js",
-	}
-	h.create()
+	cwd, _ := os.Getwd()
+	h := NewHostPool(Config{
+		Workers:    3,
+		HostJS:     cwd + "/../../js/host.js",
+		ConfigFile: cwd + "/testdata/config.jsbld.js",
+		SourceDir:  cwd + "/testdata/src",
+		OutputDir:  cwd + "/testdata/lib",
+	})
 	defer h.Close()
 
 	expected := []Import{{Kind: "static", Name: "file2", Resolved: "file2.js"}}
@@ -23,8 +26,7 @@ func TestHostPool(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		go func() {
 			imports, err := h.Run(Source{
-				Src:     "testdata/src/file.js",
-				Dst:     "testdata/lib/file.js",
+				Name:    "file.js",
 				Plugins: []string{"test"},
 			})
 			require.NoError(t, err)

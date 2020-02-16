@@ -1,23 +1,21 @@
 package compiler
 
 // NewHostPool initializes a pool of w hosts.
-func NewHostPool(w int, js, config string) Host {
-	hp := &hostPool{js: js, config: config, count: w}
+func NewHostPool(c Config) Host {
+	hp := &hostPool{config: c}
 	hp.create()
 	return hp
 }
 
 type hostPool struct {
-	js     string
-	config string
-	count  int
+	config Config
 	hosts  chan Host
 }
 
 func (h *hostPool) create() {
-	h.hosts = make(chan Host, h.count)
-	for i := 0; i < h.count; i++ {
-		h.hosts <- NewHost(h.js, h.config)
+	h.hosts = make(chan Host, h.config.Workers)
+	for i := 0; i < h.config.Workers; i++ {
+		h.hosts <- NewHost(h.config)
 	}
 }
 

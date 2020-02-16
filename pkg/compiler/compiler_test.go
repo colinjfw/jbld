@@ -8,17 +8,18 @@ import (
 )
 
 func TestCompiler(t *testing.T) {
+	cwd, _ := os.Getwd()
 	os.RemoveAll("./testdata/lib")
 
-	c := &Compiler{
-		HostJS:      "../../js/host.js",
-		ConfigFile:  "./testdata/config.jsbld.js",
-		SourceDir:   "./testdata/src",
-		OutputDir:   "./testdata/lib",
+	c := &Compiler{Config: Config{
+		HostJS:      cwd + "/../../js/host.js",
+		ConfigFile:  cwd + "/testdata/config.jsbld.js",
+		SourceDir:   cwd + "/testdata/src",
+		OutputDir:   cwd + "/testdata/lib",
 		Entrypoints: []string{"file.js"},
 		Plugins:     []string{"test"},
 		Workers:     1,
-	}
+	}}
 
 	t.Run("Normal", func(t *testing.T) {
 		require.NoError(t, c.Run())
