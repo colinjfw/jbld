@@ -22,9 +22,11 @@ func TestCompiler(t *testing.T) {
 	}}
 
 	t.Run("Normal", func(t *testing.T) {
-		require.NoError(t, c.Run())
+		_, err := c.Run()
+		require.NoError(t, err)
 	})
 	t.Run("Cached", func(t *testing.T) {
-		require.NoError(t, c.Run())
+		_, err := c.Run()
+		require.NoError(t, err)
 	})
 }

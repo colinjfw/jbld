@@ -4,6 +4,7 @@ module.exports = {
   plugins: {
     babel: new BabelPlugin({
       presets: [
+        "minify",
         [
           "@babel/preset-env",
           {

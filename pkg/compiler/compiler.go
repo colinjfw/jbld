@@ -21,7 +21,7 @@ type Compiler struct {
 }
 
 // Run executes the compiler.
-func (c *Compiler) Run() error {
+func (c *Compiler) Run() (*Manifest, error) {
 	t1 := time.Now()
 
 	h := NewHostPool(c.Config)
@@ -38,16 +38,19 @@ func (c *Compiler) Run() error {
 			return o.ImportFiles(), nil
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	if ferr := fw.flush(); ferr != nil {
-		return ferr
+		return nil, ferr
 	}
 
 	log.Printf(
-		"compiler: finished files=%d err=%v in=%v",
-		count, err, time.Since(t1),
+		"compiler: bundled %d files in %v",
+		count, time.Since(t1),
 	)
-	return err
+	return fw.manifest(), nil
 }
 
 func (c *Compiler) process(file string, host Host) (File, error) {
@@ -154,6 +157,18 @@ func (fw *fileWriter) write(f File) {
 	fw.lock.Unlock()
 }
 
+func (fw *fileWriter) manifest() *Manifest {
+	fw.lock.Lock()
+	defer fw.lock.Unlock()
+
+	return &Manifest{
+		Version: fw.config.Version(),
+		Config:  fw.config,
+		Files:   fw.files,
+		Resolve: fw.resolve,
+	}
+}
+
 func (fw *fileWriter) flush() error {
 	fw.lock.Lock()
 	defer fw.lock.Unlock()
@@ -167,10 +182,5 @@ func (fw *fileWriter) flush() error {
 	}
 	enc := json.NewEncoder(f)
 	enc.SetIndent("", "  ")
-	return enc.Encode(Manifest{
-		Version: fw.config.Version(),
-		Config:  fw.config,
-		Files:   fw.files,
-		Resolve: fw.resolve,
-	})
+	return enc.Encode(fw.manifest())
 }
