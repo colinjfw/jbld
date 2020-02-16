@@ -12,12 +12,11 @@ func TestCompiler(t *testing.T) {
 	os.RemoveAll("./testdata/lib")
 
 	c := &Compiler{Config: Config{
-		HostJS:      cwd + "/../../js/host.js",
+		HostJS:      cwd + "/../../lib/host.js",
 		ConfigFile:  cwd + "/testdata/config.jsbld.js",
 		SourceDir:   cwd + "/testdata/src",
 		OutputDir:   cwd + "/testdata/lib",
 		Entrypoints: []string{"file.js"},
-		Plugins:     []string{"test"},
 		Workers:     1,
 	}}
 

@@ -1,6 +1,5 @@
 export interface Source {
   name: string;
-  plugins: string[];
   src: string;
   dst: string;
   srcDir: string;

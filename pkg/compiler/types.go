@@ -18,8 +18,7 @@ type Import struct {
 
 // Source represents a source file.
 type Source struct {
-	Name    string   `json:"name"`
-	Plugins []string `json:"plugins"`
+	Name string `json:"name"`
 }
 
 // Object holds information about a file.
@@ -28,8 +27,6 @@ type Object struct {
 	Hash string `json:"hash"`
 	// Imports is the list of file imports.
 	Imports []Import `json:"imports"`
-	// Plugins represents the plugins used on this file.
-	Plugins []string `json:"plugins"`
 }
 
 // Config represents a compiler configuration.
@@ -39,7 +36,6 @@ type Config struct {
 	Entrypoints []string `json:"entrypoints"`
 	SourceDir   string   `json:"sourceDir"`
 	OutputDir   string   `json:"outputDir"`
-	Plugins     []string `json:"plugins"`
 	Workers     int      `json:"workers"`
 }
 

@@ -15,28 +15,29 @@ func TestCompiler(t *testing.T) {
 	cwd, _ := os.Getwd()
 
 	c := &compiler.Compiler{Config: compiler.Config{
-		HostJS:      cwd + "/../js/host.js",
+		HostJS:      cwd + "/../lib/host.js",
 		ConfigFile:  cwd + "/config.jbld.js",
 		SourceDir:   cwd,
 		OutputDir:   cwd + "/lib",
 		Entrypoints: []string{"src/index.js"},
-		Plugins:     []string{"babel"},
 		Workers:     2,
 	}}
-	b := &bundler.Bundler{
-		OutputDir:    "./dist",
-		RuntimeJS:    "../js/runtime.js",
-		ManifestPath: "./lib/.jbld-manifest",
-	}
+	var err error
+	var m *compiler.Manifest
 
 	t.Run("Normal", func(t *testing.T) {
-		_, err := c.Run()
+		m, err = c.Run()
 		require.NoError(t, err)
 	})
 	t.Run("Cached", func(t *testing.T) {
-		_, err := c.Run()
+		m, err = c.Run()
 		require.NoError(t, err)
 	})
+
+	b := &bundler.Bundler{Config: bundler.Config{
+		OutputDir: "./dist",
+	}}
+	b.Manifest = m
 	t.Run("Bundler", func(t *testing.T) {
 		require.NoError(t, b.Run())
 	})

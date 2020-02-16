@@ -1,3 +1,6 @@
+package bundler
+
+const runtime = `
 var __modules = {
   defined: {},
   cache: {},
@@ -21,3 +24,4 @@ var __modules = {
     return this.cache[name].exports;
   }.bind(__modules),
 };
+`

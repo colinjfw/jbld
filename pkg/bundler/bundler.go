@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -25,7 +24,6 @@ const (
 
 // Config represents Bundler configuration.
 type Config struct {
-	RuntimeJS string
 	OutputDir string
 }
 
@@ -74,11 +72,7 @@ func (b *Bundler) Run() error {
 }
 
 func (b *Bundler) bundleRuntime(w *bufio.Writer) error {
-	runtime, err := ioutil.ReadFile(b.RuntimeJS)
-	if err != nil {
-		return err
-	}
-	_, err = w.Write(runtime)
+	_, err := w.WriteString(runtime)
 	return err
 }
 

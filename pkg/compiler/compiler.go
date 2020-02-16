@@ -58,37 +58,27 @@ func (c *Compiler) process(file string, host Host) (File, error) {
 	dst := filepath.Join(c.OutputDir, file)
 
 	s := Source{
-		Name:    file,
-		Plugins: c.Plugins,
+		Name: file,
 	}
 
 	obj, err := readObj(dst)
 	if err != nil {
 		return File{}, err
 	}
-	// TODO: Also diff s.Plugins vs obj.Plugins.
-
 	hash, err := hashFile(src)
 	if err != nil {
 		return File{}, err
 	}
 	if hash == obj.Hash {
-		log.Printf(
-			"compiler: process - cached: %s plugins=%v",
-			s.Name, s.Plugins,
-		)
+		log.Printf("compiler: process - cached: %s", s.Name)
 		return File{
 			Source: s,
 			Object: obj,
 		}, nil
 	}
 
-	log.Printf(
-		"compiler: process - compiling: %s plugins=%v",
-		s.Name, s.Plugins,
-	)
+	log.Printf("compiler: process - compiling: %s", s.Name)
 	obj.Hash = hash
-	obj.Plugins = c.Plugins
 	obj.Imports, err = host.Run(s)
 	if err != nil {
 		return File{}, err
@@ -158,9 +148,6 @@ func (fw *fileWriter) write(f File) {
 }
 
 func (fw *fileWriter) manifest() *Manifest {
-	fw.lock.Lock()
-	defer fw.lock.Unlock()
-
 	return &Manifest{
 		Version: fw.config.Version(),
 		Config:  fw.config,

@@ -1,3 +1,5 @@
+const { Configuration } = require("../../../lib");
+
 class TestPlugin {
   run(input) {
     return {
@@ -11,9 +13,8 @@ class TestPlugin {
   }
 }
 
-
-module.exports = {
-  plugins: {
-    test: new TestPlugin(),
-  },
-};
+module.exports = new Configuration({
+  rules: [{
+    use: [new TestPlugin()],
+  }],
+});

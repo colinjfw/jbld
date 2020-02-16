@@ -1,14 +1,6 @@
 {
   "dependencies": {
-    "@babel/core": "^7.8.4",
-    "@babel/plugin-syntax-dynamic-import": "^7.8.3",
-    "@babel/plugin-transform-modules-amd": "^7.8.3",
-    "@babel/plugin-transform-runtime": "^7.8.3",
-    "@babel/preset-env": "^7.8.4",
     "@babel/runtime": "^7.8.4",
-    "babel-plugin-import-visitor": "^0.2.0",
-    "babel-preset-minify": "^0.5.1",
-    "core-js": "2",
-    "resolve-from": "^5.0.0"
+    "core-js": "2"
   }
 }
