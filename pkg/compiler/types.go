@@ -1,5 +1,11 @@
 package compiler
 
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+)
+
 // Import represents a mapping from a file to an import.
 type Import struct {
 	// Kind can be 'async' or 'static' or other plugin provided types.
@@ -37,6 +43,16 @@ type Config struct {
 	Workers     int      `json:"workers"`
 }
 
+// Version describes a unique hash for this config.
+func (c Config) Version() string {
+	h := sha256.New()
+	err := json.NewEncoder(h).Encode(c)
+	if err != nil {
+		panic(err)
+	}
+	return hex.EncodeToString(h.Sum(nil))
+}
+
 // File holds a compiled file.
 type File struct {
 	Source
@@ -49,4 +65,12 @@ func (f File) ImportFiles() (out []string) {
 		out = append(out, i.Resolved)
 	}
 	return
+}
+
+// Manifest represents result of compilation work.
+type Manifest struct {
+	Version string            `json:"version"`
+	Resolve map[string]string `json:"resolve"`
+	Config  Config            `json:"config"`
+	Files   []File            `json:"files"`
 }

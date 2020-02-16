@@ -18,6 +18,15 @@ func TestWaits(t *testing.T) {
 	require.Equal(t, 2, c)
 }
 
+func TestLargeSingle(t *testing.T) {
+	c, err := Run(1, []string{"1"}, func(f string) ([]string, error) {
+		time.Sleep(1 * time.Millisecond)
+		return []string{"2", "3", "4", "5", "6"}, nil
+	})
+	require.NoError(t, err)
+	require.Equal(t, 6, c)
+}
+
 func TestQueue(t *testing.T) {
 	c, err := Run(10, []string{"2", "3", "6"}, func(f string) ([]string, error) {
 		time.Sleep(1 * time.Millisecond)

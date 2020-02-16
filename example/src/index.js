@@ -1,3 +1,3 @@
-import { App } from "./app";
+import * as app from "./app";
 
-console.log(new App());
+console.log(new app.App());

@@ -1,36 +1,4 @@
-const babel = require("@babel/core");
-const path = require('path');
-const importVisitor = require("babel-plugin-import-visitor");
-const resolveFrom = require('resolve-from');
-
-class BabelPlugin {
-  constructor(opts) {
-    this.opts = opts;
-  }
-
-  run(code, file) {
-    const search = path.dirname(file.src);
-    const imports = [];
-    const opts = {
-      ...this.opts,
-      plugins: (this.opts.plugins ? this.opts.plugins : []).concat([
-        importVisitor(node => {
-          imports.push({
-            name: node.value,
-            resolved: resolveFrom(search, node.value).replace(file.srcDir+"/", ""),
-            kind: 'static',
-          });
-        }),
-      ]),
-      ast: false,
-    }
-    const result = babel.transformSync(code, opts);
-    return {
-      imports,
-      output: result.code,
-    };
-  }
-}
+const { BabelPlugin } = require("./plugin");
 
 module.exports = {
   plugins: {

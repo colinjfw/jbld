@@ -15,11 +15,11 @@ func TestCompiler(t *testing.T) {
 	c := &compiler.Compiler{Config: compiler.Config{
 		HostJS:      cwd + "/../js/host.js",
 		ConfigFile:  cwd + "/config.jbld.js",
-		SourceDir:   cwd + "/src",
+		SourceDir:   cwd,
 		OutputDir:   cwd + "/lib",
-		Entrypoints: []string{"index.js"},
+		Entrypoints: []string{"src/index.js"},
 		Plugins:     []string{"babel"},
-		Workers:     1,
+		Workers:     2,
 	}}
 
 	t.Run("Normal", func(t *testing.T) {

@@ -21,7 +21,7 @@ const (
 
 type state struct {
 	state uint
-	more  bool
+	next  []string
 	err   error
 }
 
@@ -37,7 +37,6 @@ func New(workers int, process ProcessFunc) *Queue {
 type Queue struct {
 	process ProcessFunc
 	w       int
-	in      chan string
 	out     chan string
 	state   chan state
 }
@@ -45,28 +44,19 @@ type Queue struct {
 // Dealer reads files from the in channel and closes in once all work is
 // complete. We know that work is complete if len(in) == 0 and len(out) == 0 and
 // there is no in flight work.
-func (q *Queue) dealer() (int, error) {
+func (q *Queue) dealer(initial []string) (int, error) {
 	var (
 		count   int
 		closing bool
 		err     error
 		cache   = map[string]bool{}
+		buf     = initial
 	)
 
 	for {
 		select {
-		case f := <-q.in:
-			if closing {
-				continue
-			}
-			if cache[f] {
-				continue
-			}
-			cache[f] = true
-			q.out <- f
 		case state := <-q.state:
 			if state.state == doneState {
-				close(q.in)
 				close(q.state)
 				return count, err
 			}
@@ -80,11 +70,29 @@ func (q *Queue) dealer() (int, error) {
 				continue
 			}
 
-			count++
-			if count == len(cache) {
-				close(q.out)
-				closing = true
+			if len(state.next) > 0 {
+				buf = append(buf, state.next...)
 			}
+
+			count++
+		default:
+			if closing {
+				continue
+			}
+			if len(buf) == 0 {
+				if count == len(cache) {
+					close(q.out)
+					closing = true
+				}
+				continue
+			}
+			var f string
+			f, buf = buf[0], buf[1:]
+			if cache[f] {
+				continue
+			}
+			cache[f] = true
+			q.out <- f
 		}
 	}
 }
@@ -98,10 +106,7 @@ func (q *Queue) worker(w int, wg *sync.WaitGroup) error {
 			q.state <- state{state: errorState, err: err}
 			continue
 		}
-		for _, i := range out {
-			q.in <- i
-		}
-		q.state <- state{state: okState}
+		q.state <- state{state: okState, next: out}
 	}
 	return nil
 }
@@ -111,9 +116,8 @@ func (q *Queue) Run(initial []string) (int, error) {
 	if q.w == 0 {
 		return 0, errors.New("queue: must have non-zero workers")
 	}
-	q.in = make(chan string)
 	q.out = make(chan string, q.w)
-	q.state = make(chan state)
+	q.state = make(chan state, q.w)
 	wg := &sync.WaitGroup{}
 	wg.Add(q.w)
 	for i := 0; i < q.w; i++ {
@@ -121,11 +125,8 @@ func (q *Queue) Run(initial []string) (int, error) {
 	}
 
 	go func() {
-		for _, f := range initial {
-			q.in <- f
-		}
 		wg.Wait()
 		q.state <- state{state: doneState}
 	}()
-	return q.dealer()
+	return q.dealer(initial)
 }

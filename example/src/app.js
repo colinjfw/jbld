@@ -1,6 +1,6 @@
-import * as mod from "./mod";
+import * as foobar from "foobar";
 
-export class App {
+ export class App {
   hello() { return "hello" }
-  mod() { return mod }
+  mod() { return import("./mod") }
 }

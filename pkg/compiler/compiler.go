@@ -27,7 +27,7 @@ func (c *Compiler) Run() error {
 	h := NewHostPool(c.Config)
 	defer h.Close()
 
-	fw := &fileWriter{config: c.Config}
+	fw := &fileWriter{config: c.Config, resolve: map[string]string{}}
 	count, err := queue.Run(c.Workers, c.Entrypoints,
 		func(f string) ([]string, error) {
 			o, err := c.process(f, h)
@@ -64,6 +64,7 @@ func (c *Compiler) process(file string, host Host) (File, error) {
 		return File{}, err
 	}
 	// TODO: Also diff s.Plugins vs obj.Plugins.
+
 	hash, err := hashFile(src)
 	if err != nil {
 		return File{}, err
@@ -138,14 +139,18 @@ func writeObj(dst string, o Object) error {
 }
 
 type fileWriter struct {
-	config Config
-	files  []File
-	lock   sync.Mutex
+	config  Config
+	files   []File
+	resolve map[string]string
+	lock    sync.Mutex
 }
 
 func (fw *fileWriter) write(f File) {
 	fw.lock.Lock()
 	fw.files = append(fw.files, f)
+	for _, imp := range f.Object.Imports {
+		fw.resolve[imp.Name] = imp.Resolved
+	}
 	fw.lock.Unlock()
 }
 
@@ -162,8 +167,10 @@ func (fw *fileWriter) flush() error {
 	}
 	enc := json.NewEncoder(f)
 	enc.SetIndent("", "  ")
-	return enc.Encode(struct {
-		Files  []File `json:"files"`
-		Config Config `json:"config"`
-	}{Files: fw.files, Config: fw.config})
+	return enc.Encode(Manifest{
+		Version: fw.config.Version(),
+		Config:  fw.config,
+		Files:   fw.files,
+		Resolve: fw.resolve,
+	})
 }
