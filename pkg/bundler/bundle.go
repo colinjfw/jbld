@@ -27,43 +27,58 @@ const (
 )
 
 // BundleID references a Bundle.
-type BundleID struct{ BaseURL, Name, Type, Hash string }
-
-// URL provides the full bundle name.
-func (b BundleID) URL() string {
-	return filepath.Join(b.BaseURL, b.Name+"."+b.Hash+"."+b.Type)
-}
+type BundleID struct{ BaseURL, FullName, URL, Name, Type, Hash string }
 
 // MarshalJSON implements the marshalling interface.
 func (b BundleID) MarshalJSON() ([]byte, error) {
-	return json.Marshal(b.URL())
+	return json.Marshal(b.URL)
+}
+
+// BundleCreate maps a request to create a new bundle object.
+type BundleCreate struct {
+	Config   Config
+	Manifest *compiler.Manifest
+	Name     string
+	Type     string
+	Main     string
+	Files    []compiler.File
+}
+
+// NewBundle constructs a new bundle.
+func NewBundle(r BundleCreate) *Bundle {
+	b := &Bundle{
+		BundleID: BundleID{
+			Name:    r.Name,
+			Type:    r.Type,
+			BaseURL: r.Config.BaseURL,
+		},
+		Main:    r.Main,
+		Files:   r.Files,
+		Resolve: r.Manifest.Resolve,
+	}
+	b.setHash()
+	b.FullName = b.Name + "." + b.Hash + "." + b.Type
+	b.URL = filepath.Join(b.BaseURL, b.FullName)
+	return b
 }
 
 // Bundle represents an individual bundle.
 type Bundle struct {
-	Primary bool              `json:"primary"`
-	BaseURL string            `json:"baseUrl"`
+	BundleID
 	Main    string            `json:"main"`
-	Name    string            `json:"name"`
-	Type    string            `json:"type"`
 	Files   []compiler.File   `json:"files"`
 	Bundles []BundleID        `json:"bundles"`
 	Resolve map[string]string `json:"resolve"`
-	Hash    string            `json:"hash"`
 }
 
-// URL provides the bundle url.
-func (b *Bundle) URL() string {
-	return filepath.Join(b.BaseURL, b.FullName())
-}
-
-// FullName provides the full bundle name.
-func (b *Bundle) FullName() string {
-	return b.Name + "." + b.Hash + "." + b.Type
+// AddDependent adds a dependent chunk.
+func (b *Bundle) AddDependent(id BundleID) *Bundle {
+	b.Bundles = append(b.Bundles, id)
+	return b
 }
 
 // Hash provides a sha256 for a bundle.
-func (b *Bundle) setHash() *Bundle {
+func (b *Bundle) setHash() {
 	h := sha256.New()
 	for _, f := range b.Files {
 		h.Write([]byte(f.Object.Hash))
@@ -72,14 +87,13 @@ func (b *Bundle) setHash() *Bundle {
 		h.Write([]byte(s.Type + "/" + s.Name))
 	}
 	b.Hash = hex.EncodeToString(h.Sum(nil))
-	return b
 }
 
 // Run executes the bundler process.
 func (b *Bundle) Run(srcDir, dstDir string) error {
 	t1 := time.Now()
 	os.MkdirAll(dstDir, 0700)
-	src := filepath.Join(dstDir, b.FullName())
+	src := filepath.Join(dstDir, b.FullName)
 
 	var w *bufio.Writer
 	{

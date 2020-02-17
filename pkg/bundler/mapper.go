@@ -7,21 +7,27 @@ import (
 	"github.com/colinjfw/jbld/pkg/compiler"
 )
 
+// MapRequest represents a configuration for mapping.
+type MapRequest struct {
+	Config
+	Manifest *compiler.Manifest
+}
+
 // BundleMapper sets up a set of bundles to compile. Bundles are traversed
 // starting with the entrypoint and selecting all
-func BundleMapper(b *Bundler) ([]*Bundle, error) {
-	s := &bundleMapper{b: b}
+func BundleMapper(m MapRequest) ([]*Bundle, error) {
+	s := &bundleMapper{MapRequest: m}
 	s.buildMap()
 	return s.run()
 }
 
 type bundleMapper struct {
-	b       *Bundler
+	MapRequest
 	fileMap map[string]compiler.File
 }
 
 func (s *bundleMapper) nameEntrypoint(name string) string {
-	for _, e := range s.b.Entrypoints {
+	for _, e := range s.Entrypoints {
 		if e.Path == name {
 			return e.Name
 		}
@@ -32,7 +38,7 @@ func (s *bundleMapper) nameEntrypoint(name string) string {
 
 func (s *bundleMapper) buildMap() {
 	s.fileMap = map[string]compiler.File{}
-	for _, f := range s.b.Manifest.Files {
+	for _, f := range s.Manifest.Files {
 		s.fileMap[f.Name] = f
 	}
 }
@@ -56,34 +62,32 @@ func (s *bundleMapper) traverseCollect(f compiler.File) map[string][]compiler.Fi
 	return out
 }
 
-func (s *bundleMapper) dependentBundles(name, myType string, m map[string][]compiler.File) []BundleID {
-	ids := []BundleID{}
-	for typ := range m {
-		if typ == myType {
-			continue
-		}
-		ids = append(ids, BundleID{Type: typ, Name: name})
-	}
-	return ids
-}
-
 func (s *bundleMapper) run() ([]*Bundle, error) {
 	var bundles []*Bundle
-	for _, entry := range s.b.Manifest.Config.Entrypoints {
-		collect := s.traverseCollect(s.fileMap[entry])
-		for typ, files := range collect {
+	for _, entry := range s.Manifest.Config.Entrypoints {
+		var group []*Bundle
+		for typ, files := range s.traverseCollect(s.fileMap[entry]) {
 			name := s.nameEntrypoint(entry)
-			bundles = append(bundles, (&Bundle{
-				Primary: true,
-				Type:    typ,
-				Name:    name,
-				Main:    entry,
-				Files:   files,
-				Bundles: s.dependentBundles(name, typ, collect),
-				Resolve: s.b.Manifest.Resolve,
-				BaseURL: s.b.BaseURL,
-			}).setHash())
+			group = append(group,
+				NewBundle(BundleCreate{
+					Manifest: s.Manifest,
+					Config:   s.Config,
+					Type:     typ,
+					Name:     name,
+					Main:     entry,
+					Files:    files,
+				}),
+			)
 		}
+		for i, b := range group {
+			for i2, b2 := range group {
+				if i == i2 {
+					continue
+				}
+				b.AddDependent(b2.BundleID)
+			}
+		}
+		bundles = append(bundles, group...)
 	}
 	return bundles, nil
 }

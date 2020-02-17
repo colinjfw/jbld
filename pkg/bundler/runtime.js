@@ -3,7 +3,7 @@
   if (g.__modules) {
     return;
   }
-  var m = { defined: {}, cache: {}, resolve: {}, chunks: (g.__chuncks || {}) };
+  var m = { defined: {}, cache: {}, resolve: {}, chunks: (g.__chunks || {}) };
   m.require = function (name) {
     if (m.resolve[name]) {
       name = m.resolve[name];

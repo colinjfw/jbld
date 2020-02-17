@@ -41,7 +41,10 @@ type Bundler struct {
 // Run will execute the bundler process by calling the BundleMapper function and
 // then running the set of optimizers.
 func (b *Bundler) Run() error {
-	bundles, err := BundleMapper(b)
+	bundles, err := BundleMapper(MapRequest{
+		Manifest: b.Manifest,
+		Config:   b.Config,
+	})
 	if err != nil {
 		return err
 	}
@@ -52,7 +55,6 @@ func (b *Bundler) Run() error {
 		}
 		bundles, err = op(b, bundles)
 	}
-	b.fillBundleIDs(bundles)
 	for _, bn := range bundles {
 		err = bn.Run(b.Manifest.Config.OutputDir, b.Config.OutputDir)
 		if err != nil {
@@ -62,33 +64,12 @@ func (b *Bundler) Run() error {
 	return b.writeManifest(bundles)
 }
 
-func (b *Bundler) fillBundleIDs(bundles []*Bundle) {
-	findHash := func(name, typ string) string {
-		for _, bu := range bundles {
-			if bu.Name == name && bu.Type == typ {
-				return bu.Hash
-			}
-		}
-		return ""
-	}
-	for _, bu := range bundles {
-		for i, id := range bu.Bundles {
-			bu.Bundles[i] = BundleID{
-				Name:    id.Name,
-				Type:    id.Type,
-				Hash:    findHash(id.Name, id.Type),
-				BaseURL: b.BaseURL,
-			}
-		}
-	}
-}
-
 func (b *Bundler) writeManifest(bundles []*Bundle) error {
 	m := Manifest{Config: b.Config, Entrypoints: map[string][]string{}}
 	m.HTML = b.html(bundles)
 	for _, bn := range bundles {
-		m.Bundles = append(m.Bundles, bn.URL())
-		m.Entrypoints[bn.Name] = append(m.Entrypoints[bn.Name], bn.URL())
+		m.Bundles = append(m.Bundles, bn.URL)
+		m.Entrypoints[bn.Name] = append(m.Entrypoints[bn.Name], bn.URL)
 	}
 	src := filepath.Join(b.OutputDir, ".jbld-bundle-manifest")
 	f, err := os.OpenFile(src, os.O_CREATE|os.O_RDWR, 0700)
@@ -105,7 +86,7 @@ func (b *Bundler) writeManifest(bundles []*Bundle) error {
 func (b *Bundler) html(bundles []*Bundle) string {
 	chunkMap := map[string]bool{}
 	for _, bn := range bundles {
-		chunkMap[bn.URL()] = true
+		chunkMap[bn.URL] = true
 	}
 	chunks, _ := json.Marshal(chunkMap)
 	out := []string{
@@ -116,12 +97,12 @@ func (b *Bundler) html(bundles []*Bundle) string {
 		case "css":
 			out = append(out, fmt.Sprintf(
 				"<link rel=\"stylesheet\" type=\"text/css\" href=\"%s\">",
-				bn.URL(),
+				bn.URL,
 			))
 		case "js":
 			out = append(out, fmt.Sprintf(
 				"<script type=\"application/javascript\" src=\"%s\"></script>",
-				bn.URL(),
+				bn.URL,
 			))
 		}
 	}
