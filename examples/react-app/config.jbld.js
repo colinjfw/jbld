@@ -19,6 +19,10 @@ const babel = new BabelPlugin({
 });
 
 module.exports = new Configuration({
+  bundler: {
+    optimize: [],
+    after: [],
+  },
   rules: [
     {
       test: /\.js$/,

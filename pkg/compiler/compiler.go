@@ -12,8 +12,24 @@ import (
 	"sync"
 	"time"
 
+	"github.com/colinjfw/jbld/pkg/host"
 	"github.com/colinjfw/jbld/pkg/queue"
 )
+
+// ProcessRequest is sent to the Configuration JS class.
+type ProcessRequest struct {
+	Name   string `json:"name"`
+	Src    string `json:"src"`
+	Dst    string `json:"dst"`
+	SrcDir string `json:"srcDir"`
+	DstDir string `json:"dstDir"`
+}
+
+// ProcessResponse is expected from the Configuration JS class.
+type ProcessResponse struct {
+	Type    string   `json:"type"`
+	Imports []Import `json:"imports"`
+}
 
 // Compiler represents the compilation process.
 type Compiler struct {
@@ -24,7 +40,7 @@ type Compiler struct {
 func (c *Compiler) Run() (*Manifest, error) {
 	t1 := time.Now()
 
-	h := NewHostPool(c.Config)
+	h := host.NewHostPool(c.Workers, c.HostJS, c.ConfigFile)
 	defer h.Close()
 
 	fw := &fileWriter{config: c.Config, resolve: map[string]string{}}
@@ -50,7 +66,7 @@ func (c *Compiler) Run() (*Manifest, error) {
 	return fw.manifest(), nil
 }
 
-func (c *Compiler) process(file string, host Host) (File, error) {
+func (c *Compiler) process(file string, h host.Host) (File, error) {
 	src := filepath.Join(c.SourceDir, file)
 	dst := filepath.Join(c.OutputDir, file)
 
@@ -75,7 +91,14 @@ func (c *Compiler) process(file string, host Host) (File, error) {
 	}
 
 	log.Printf("compiler: process - compiling: %s", s.Name)
-	resp, err := host.Run(s)
+	resp := ProcessResponse{}
+	err = h.Run("process", ProcessRequest{
+		Name:   file,
+		Src:    src,
+		Dst:    dst,
+		SrcDir: c.SourceDir,
+		DstDir: c.OutputDir,
+	}, &resp)
 	if err != nil {
 		return File{}, err
 	}

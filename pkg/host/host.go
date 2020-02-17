@@ -1,4 +1,4 @@
-package compiler
+package host
 
 import (
 	"bufio"
@@ -10,27 +10,33 @@ import (
 	"sync"
 )
 
-// HostResponse returns a response from the host.
-type HostResponse struct {
-	Type    string   `json:"type"`
-	Imports []Import `json:"imports"`
+// PingRequest is a valid command.
+type PingRequest struct {
+	Version string `json:"version"`
+}
+
+// PingResponse is a valid response.
+type PingResponse struct {
+	Version string `json:"version"`
 }
 
 // Host implements an extension host.
 type Host interface {
 	Close() error
-	Run(Source) (HostResponse, error)
+	Run(method string, in, out interface{}) error
 }
 
 // NewHost initializes a new host.
-func NewHost(c Config) Host {
+func NewHost(js, arg string) Host {
 	return &host{
-		config: c,
+		arg:    arg,
+		hostJS: js,
 	}
 }
 
 type host struct {
-	config Config
+	hostJS string
+	arg    string
 	lock   sync.Mutex
 	stdin  io.Writer
 	stdout *bufio.Reader
@@ -48,12 +54,7 @@ func (h *host) open() error {
 		return nil
 	}
 
-	arg, err := json.Marshal(h.config)
-	if err != nil {
-		return err
-	}
-
-	cmd := exec.Command("node", h.config.HostJS, string(arg))
+	cmd := exec.Command("node", h.hostJS, h.arg)
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		return err
@@ -101,45 +102,56 @@ func (h *host) close() error {
 }
 
 // Run implements the Host interface.
-func (h *host) Run(s Source) (HostResponse, error) {
+func (h *host) Run(method string, in, out interface{}) error {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
 	if err := h.open(); err != nil {
-		return HostResponse{}, err
+		return err
 	}
 
-	data, err := json.Marshal(s)
+	reqBody, err := json.Marshal(in)
 	if err != nil {
-		return HostResponse{}, err
+		return err
+	}
+	req := struct {
+		Req    json.RawMessage `json:"req"`
+		Method string          `json:"method"`
+	}{
+		Req:    reqBody,
+		Method: method,
+	}
+	reqBytes, err := json.Marshal(req)
+	if err != nil {
+		return err
 	}
 
 	// log.Printf("compiler: host - wrote %s", string(data))
 
-	_, err = h.stdin.Write(append(data, '\n'))
+	_, err = h.stdin.Write(append(reqBytes, '\n'))
 	if err != nil {
 		h.close()
-		return HostResponse{}, err
+		return err
 	}
 
 	respBytes, _, err := h.stdout.ReadLine()
 	if err != nil {
 		h.close()
-		return HostResponse{}, err
+		return err
 	}
 
 	// log.Printf("compiler: host - received %s", string(respBytes))
 
 	resp := struct {
-		HostResponse
-		Err string `json:"err"`
+		Res json.RawMessage `json:"res"`
+		Err string          `json:"err"`
 	}{}
 	err = json.Unmarshal(respBytes, &resp)
 	if err != nil {
-		return HostResponse{}, err
+		return err
 	}
 	if resp.Err != "" {
-		return HostResponse{}, fmt.Errorf("host: response err: %s", resp.Err)
+		return fmt.Errorf("host: response err: %s", resp.Err)
 	}
-	return resp.HostResponse, nil
+	return json.Unmarshal(resp.Res, out)
 }

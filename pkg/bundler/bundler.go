@@ -23,7 +23,6 @@ type Config struct {
 	BaseURL     string       `json:"baseUrl"`
 	OutputDir   string       `json:"outputDir"`
 	Entrypoints []Entrypoint `json:"entrypoints"`
-	Optimizers  []string     `json:"optimizers"`
 }
 
 // Entrypoint configures a compilation target entrypoint.
@@ -48,13 +47,7 @@ func (b *Bundler) Run() error {
 	if err != nil {
 		return err
 	}
-	for _, optim := range b.Optimizers {
-		op, err := GetOptimizer(optim)
-		if err != nil {
-			return err
-		}
-		bundles, err = op(b, bundles)
-	}
+
 	for _, bn := range bundles {
 		err = bn.Run(b.Manifest.Config.OutputDir, b.Config.OutputDir)
 		if err != nil {
