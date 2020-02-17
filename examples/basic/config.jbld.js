@@ -1,5 +1,5 @@
-const { BabelPlugin } = require("../lib/babel");
-const { Configuration } = require("../lib");
+const { BabelPlugin } = require("../../lib/babel");
+const { Configuration } = require("../../lib");
 
 const babel = new BabelPlugin({
   plugins: [

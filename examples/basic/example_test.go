@@ -15,7 +15,7 @@ func TestCompiler(t *testing.T) {
 	cwd, _ := os.Getwd()
 
 	c := &compiler.Compiler{Config: compiler.Config{
-		HostJS:      cwd + "/../lib/host.js",
+		HostJS:      cwd + "/../../lib/host.js",
 		ConfigFile:  cwd + "/config.jbld.js",
 		SourceDir:   cwd,
 		OutputDir:   cwd + "/lib",
@@ -35,6 +35,7 @@ func TestCompiler(t *testing.T) {
 	})
 
 	b := &bundler.Bundler{Config: bundler.Config{
+		BaseURL:   "/public/",
 		OutputDir: "./dist",
 	}}
 	b.Manifest = m

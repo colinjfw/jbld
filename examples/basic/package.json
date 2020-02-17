@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@babel/core": "7.8.4",
+    "@babel/runtime": "7.8.4",
+    "@babel/plugin-transform-runtime": "7.8.3",
+    "@babel/plugin-syntax-dynamic-import": "7.8.3",
+    "@babel/preset-env": "7.8.3",
+    "babel-preset-minify": "0.5.1",
+    "core-js": "2"
+  }
+}
