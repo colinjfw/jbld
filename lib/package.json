@@ -1,8 +1,5 @@
 {
   "name": "jbld",
   "license": "MIT",
-  "dependencies": {},
-  "peerDependencies": {
-    "@babel/core": ">7"
-  }
+  "dependencies": {}
 }

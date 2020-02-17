@@ -3,7 +3,7 @@
   if (g.__modules) {
     return;
   }
-  var m = { defined: {}, cache: {}, resolve: {} };
+  var m = { defined: {}, cache: {}, resolve: {}, chunks: (g.__chuncks || {}) };
   m.require = function (name) {
     if (m.resolve[name]) {
       name = m.resolve[name];
@@ -34,13 +34,32 @@
         m.require(main);
       }
     }
+    function lc(src) {
+      var s = document.createElement('link');
+      s.rel = "stylesheet";
+      s.href = src;
+      s.type = "text/css";
+      document.head.appendChild(s);
+      run();
+    }
     function ls(src) {
       var s = document.createElement('script');
       s.src = src;
       s.onload = run;
       document.head.appendChild(s);
     }
-    chunks.forEach(ls);
+    chunks.forEach(function (c) {
+      if (m.chunks[c]) {
+        return;
+      }
+      var ext = c.split('.').pop();
+      if (ext === 'css') {
+        lc(c);
+      } else {
+        ls(c);
+      }
+      m.chunks[c] = true;
+    });
   };
   g.__modules = m;
 })();

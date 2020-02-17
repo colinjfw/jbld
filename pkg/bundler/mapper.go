@@ -56,27 +56,33 @@ func (s *bundleMapper) traverseCollect(f compiler.File) map[string][]compiler.Fi
 	return out
 }
 
+func (s *bundleMapper) dependentBundles(name, myType string, m map[string][]compiler.File) []BundleID {
+	ids := []BundleID{}
+	for typ := range m {
+		if typ == myType {
+			continue
+		}
+		ids = append(ids, BundleID{Type: typ, Name: name})
+	}
+	return ids
+}
+
 func (s *bundleMapper) run() ([]*Bundle, error) {
 	var bundles []*Bundle
 	for _, entry := range s.b.Manifest.Config.Entrypoints {
 		collect := s.traverseCollect(s.fileMap[entry])
-		common := []BundleID{}
-		for typ := range collect {
-			common = append(common, BundleID{
-				Type: typ,
-				Name: s.nameEntrypoint(entry),
-			})
-		}
 		for typ, files := range collect {
-			bundles = append(bundles, &Bundle{
+			name := s.nameEntrypoint(entry)
+			bundles = append(bundles, (&Bundle{
 				Primary: true,
 				Type:    typ,
-				Name:    s.nameEntrypoint(entry),
+				Name:    name,
 				Main:    entry,
 				Files:   files,
-				Bundles: common,
+				Bundles: s.dependentBundles(name, typ, collect),
 				Resolve: s.b.Manifest.Resolve,
-			})
+				BaseURL: s.b.BaseURL,
+			}).setHash())
 		}
 	}
 	return bundles, nil
