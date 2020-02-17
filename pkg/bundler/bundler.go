@@ -37,6 +37,7 @@ func (b *Bundler) Run() error {
 		}
 		bundles, err = op(b, bundles)
 	}
+	b.fillBundleIDs(bundles)
 	for _, bn := range bundles {
 		err = bn.Run(b.Manifest.Config.OutputDir, b.Config.OutputDir)
 		if err != nil {
@@ -44,4 +45,24 @@ func (b *Bundler) Run() error {
 		}
 	}
 	return nil
+}
+
+func (b *Bundler) fillBundleIDs(bundles []*Bundle) {
+	findHash := func(name, typ string) string {
+		for _, bu := range bundles {
+			if bu.Name == name && bu.Type == typ {
+				return bu.Hash()
+			}
+		}
+		return ""
+	}
+	for _, bu := range bundles {
+		for i, id := range bu.Bundles {
+			bu.Bundles[i] = BundleID{
+				Name: id.Name,
+				Type: id.Type,
+				Hash: findHash(id.Name, id.Type),
+			}
+		}
+	}
 }

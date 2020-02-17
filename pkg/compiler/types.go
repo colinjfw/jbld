@@ -23,6 +23,8 @@ type Source struct {
 
 // Object holds information about a file.
 type Object struct {
+	// Type represents a fileType.
+	Type string `json:"type"`
 	// Hash is used for cache busting.
 	Hash string `json:"hash"`
 	// Imports is the list of file imports.

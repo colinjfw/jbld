@@ -46,10 +46,7 @@ func (c *Compiler) Run() (*Manifest, error) {
 		return nil, ferr
 	}
 
-	log.Printf(
-		"compiler: bundled %d files in %v",
-		count, time.Since(t1),
-	)
+	log.Printf("compiler: compiled %d files in %v", count, time.Since(t1))
 	return fw.manifest(), nil
 }
 
@@ -78,11 +75,13 @@ func (c *Compiler) process(file string, host Host) (File, error) {
 	}
 
 	log.Printf("compiler: process - compiling: %s", s.Name)
-	obj.Hash = hash
-	obj.Imports, err = host.Run(s)
+	resp, err := host.Run(s)
 	if err != nil {
 		return File{}, err
 	}
+	obj.Hash = hash
+	obj.Imports = resp.Imports
+	obj.Type = resp.Type
 
 	err = writeObj(dst, obj)
 	if err != nil {

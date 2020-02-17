@@ -19,17 +19,20 @@ func TestHostPool(t *testing.T) {
 	})
 	defer h.Close()
 
-	expected := []Import{{Kind: "static", Name: "file2", Resolved: "file2.js"}}
+	expected := HostResponse{
+		Type:    "js",
+		Imports: []Import{{Kind: "static", Name: "file2", Resolved: "file2.js"}},
+	}
 	wg := sync.WaitGroup{}
 	wg.Add(5)
 
 	for i := 0; i < 5; i++ {
 		go func() {
-			imports, err := h.Run(Source{
+			resp, err := h.Run(Source{
 				Name: "file.js",
 			})
 			require.NoError(t, err)
-			require.Equal(t, expected, imports)
+			require.Equal(t, expected, resp)
 			wg.Done()
 		}()
 	}

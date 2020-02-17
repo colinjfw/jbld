@@ -31,7 +31,7 @@ func (h *hostPool) Close() error {
 	return err
 }
 
-func (h *hostPool) Run(s Source) ([]Import, error) {
+func (h *hostPool) Run(s Source) (HostResponse, error) {
 	in := <-h.hosts
 	imp, err := in.Run(s)
 	h.hosts <- in

@@ -17,10 +17,13 @@ func TestHost(t *testing.T) {
 	})
 	defer h.Close()
 
-	expected := []Import{{Kind: "static", Name: "file2", Resolved: "file2.js"}}
-	imports, err := h.Run(Source{
+	expected := HostResponse{
+		Type:    "js",
+		Imports: []Import{{Kind: "static", Name: "file2", Resolved: "file2.js"}},
+	}
+	resp, err := h.Run(Source{
 		Name: "file.js",
 	})
 	require.NoError(t, err)
-	require.Equal(t, expected, imports)
+	require.Equal(t, expected, resp)
 }

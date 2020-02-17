@@ -22,16 +22,16 @@
   m.define = function (name, modFn) {
     m.defined[name] = { modFn: modFn };
   };
-  m.withChunks = function (chunks, cb) {
+  m.main = function (chunks, main) {
     if (chunks.length === 0) {
-      cb();
+      m.require(main);
       return;
     }
     var l = 0;
     function run() {
       l++;
       if (l === chunks.length) {
-        cb();
+        m.require(main);
       }
     }
     function ls(src) {

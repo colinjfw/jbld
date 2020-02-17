@@ -7,7 +7,8 @@ import (
 	"github.com/colinjfw/jbld/pkg/compiler"
 )
 
-// BundleMapper sets up.
+// BundleMapper sets up a set of bundles to compile. Bundles are traversed
+// starting with the entrypoint and selecting all
 func BundleMapper(b *Bundler) ([]*Bundle, error) {
 	s := &bundleMapper{b: b}
 	s.buildMap()
@@ -43,28 +44,40 @@ func (s *bundleMapper) traverse(f compiler.File, emit func(f compiler.File)) {
 	}
 }
 
-func (s *bundleMapper) traverseCollect(f compiler.File) (out []compiler.File) {
+func (s *bundleMapper) traverseCollect(f compiler.File) map[string][]compiler.File {
 	seen := map[string]bool{}
+	out := map[string][]compiler.File{}
 	s.traverse(f, func(n compiler.File) {
 		if !seen[n.Name] {
-			out = append(out, n)
+			out[n.Object.Type] = append(out[n.Object.Type], n)
 		}
 		seen[n.Name] = true
 	})
-	return
+	return out
 }
 
 func (s *bundleMapper) run() ([]*Bundle, error) {
 	var bundles []*Bundle
 	for _, entry := range s.b.Manifest.Config.Entrypoints {
-		bundles = append(bundles, &Bundle{
-			Primary: true,
-			Name:    s.nameEntrypoint(entry),
-			Main:    entry,
-			Files:   s.traverseCollect(s.fileMap[entry]),
-			Bundles: []string{},
-			Resolve: s.b.Manifest.Resolve,
-		})
+		collect := s.traverseCollect(s.fileMap[entry])
+		common := []BundleID{}
+		for typ := range collect {
+			common = append(common, BundleID{
+				Type: typ,
+				Name: s.nameEntrypoint(entry),
+			})
+		}
+		for typ, files := range collect {
+			bundles = append(bundles, &Bundle{
+				Primary: true,
+				Type:    typ,
+				Name:    s.nameEntrypoint(entry),
+				Main:    entry,
+				Files:   files,
+				Bundles: common,
+				Resolve: s.b.Manifest.Resolve,
+			})
+		}
 	}
 	return bundles, nil
 }

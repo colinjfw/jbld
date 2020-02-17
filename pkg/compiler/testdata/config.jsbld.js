@@ -3,6 +3,7 @@ const { Configuration } = require("../../../lib");
 class TestPlugin {
   run(input) {
     return {
+      type: "js",
       imports: [{
         kind: 'static',
         name: 'file2',
