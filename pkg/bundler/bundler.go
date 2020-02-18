@@ -8,14 +8,18 @@ import (
 	"github.com/colinjfw/jbld/pkg/compiler"
 )
 
+// PublicConfig confiugures the public html plugin.
+type PublicConfig struct {
+	Dir  string   `json:"dir"`
+	HTML []string `json:"html"`
+}
+
 // Config represents Bundler configuration.
 type Config struct {
-	BaseURL     string       `json:"baseUrl"`
-	OutputDir   string       `json:"outputDir"`
-	AssetDir    string       `json:"assetDir"`
-	PublicDir   string       `json:"publicDir"`
-	HTMLSources []string     `json:"htmlSources"`
-	Entrypoints []Entrypoint `json:"entrypoints"`
+	BaseURL   string       `json:"baseUrl"`
+	OutputDir string       `json:"outputDir"`
+	AssetPath string       `json:"assetPath"`
+	Public    PublicConfig `json:"public"`
 }
 
 // Entrypoint configures a compilation target entrypoint.

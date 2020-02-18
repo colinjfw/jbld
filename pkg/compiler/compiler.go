@@ -43,10 +43,15 @@ func (c *Compiler) Run() (*Manifest, error) {
 	h := host.NewHostPool(c.Workers, c.HostJS, c.ConfigFile)
 	defer h.Close()
 
+	confHash, err := hashFile(c.ConfigFile)
+	if err != nil {
+		return nil, err
+	}
+
 	fw := &fileWriter{config: c.Config, resolve: map[string]string{}}
 	count, err := queue.Run(c.Workers, c.Entrypoints,
 		func(f string) ([]string, error) {
-			o, err := c.process(f, h)
+			o, err := c.process(confHash, f, h)
 			if err != nil {
 				return nil, err
 			}
@@ -66,7 +71,7 @@ func (c *Compiler) Run() (*Manifest, error) {
 	return fw.manifest(), nil
 }
 
-func (c *Compiler) process(file string, h host.Host) (File, error) {
+func (c *Compiler) process(confHash, file string, h host.Host) (File, error) {
 	src := filepath.Join(c.SourceDir, file)
 	dst := filepath.Join(c.OutputDir, file)
 
@@ -78,7 +83,7 @@ func (c *Compiler) process(file string, h host.Host) (File, error) {
 	if err != nil {
 		return File{}, err
 	}
-	hash, err := hashFile(src)
+	hash, err := hashFile(src, confHash)
 	if err != nil {
 		return File{}, err
 	}
@@ -116,8 +121,11 @@ func (c *Compiler) process(file string, h host.Host) (File, error) {
 	}, nil
 }
 
-func hashFile(src string) (string, error) {
+func hashFile(src string, parts ...string) (string, error) {
 	h := sha256.New()
+	for _, p := range parts {
+		h.Write([]byte(p))
+	}
 	f, err := os.Open(src)
 	if err != nil {
 		return "", err

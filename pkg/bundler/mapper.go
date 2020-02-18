@@ -27,11 +27,6 @@ type bundleMapper struct {
 }
 
 func (s *bundleMapper) nameEntrypoint(name string) string {
-	for _, e := range s.Entrypoints {
-		if e.Path == name {
-			return e.Name
-		}
-	}
 	base := filepath.Base(name)
 	return strings.TrimSuffix(base, filepath.Ext(base))
 }

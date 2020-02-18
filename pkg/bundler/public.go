@@ -9,14 +9,14 @@ import (
 )
 
 func writePublicFolder(conf Config) error {
-	if conf.PublicDir == "" {
+	if conf.Public.Dir == "" {
 		return nil
 	}
-	return exec.Command("cp", "-r", conf.PublicDir, conf.OutputDir).Run()
+	return exec.Command("cp", "-r", conf.Public.Dir, conf.OutputDir).Run()
 }
 
 func writeHTMLSources(conf Config, m *Manifest) error {
-	for _, f := range conf.HTMLSources {
+	for _, f := range conf.Public.HTML {
 		dst := filepath.Join(conf.OutputDir, f)
 		data, err := ioutil.ReadFile(dst)
 		if err != nil {

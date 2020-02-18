@@ -3,7 +3,12 @@
   if (g.__modules) {
     return;
   }
-  var m = { defined: {}, cache: {}, resolve: {}, chunks: (g.__chunks || {}) };
+  var m = { defined: {}, cache: {}, resolve: {}, chunks: {} };
+  if (g.__chunks) {
+    g.__chunks.forEach(function (c) {
+      m.chunks[c] = true;
+    });
+  }
   m.require = function (name) {
     if (m.resolve[name]) {
       name = m.resolve[name];
@@ -35,6 +40,10 @@
       }
     }
     function lc(src) {
+      if (typeof document === 'undefined') {
+        run();
+        return;
+      }
       var s = document.createElement('link');
       s.rel = "stylesheet";
       s.href = src;
@@ -43,6 +52,10 @@
       run();
     }
     function ls(src) {
+      if (typeof document === 'undefined') {
+        run();
+        return;
+      }
       var s = document.createElement('script');
       s.src = src;
       s.onload = run;
@@ -50,6 +63,7 @@
     }
     chunks.forEach(function (c) {
       if (m.chunks[c]) {
+        run();
         return;
       }
       var ext = c.split('.').pop();
