@@ -2,26 +2,19 @@ package bundler
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/colinjfw/jbld/pkg/compiler"
 )
-
-// Manifest represents the output manifest.
-type Manifest struct {
-	Config      Config              `json:"config"`
-	Entrypoints map[string][]string `json:"entrypoints"`
-	Bundles     []string            `json:"bundles"`
-	HTML        string              `json:"html"`
-}
 
 // Config represents Bundler configuration.
 type Config struct {
 	BaseURL     string       `json:"baseUrl"`
 	OutputDir   string       `json:"outputDir"`
+	AssetDir    string       `json:"assetDir"`
+	PublicDir   string       `json:"publicDir"`
+	HTMLSources []string     `json:"htmlSources"`
 	Entrypoints []Entrypoint `json:"entrypoints"`
 }
 
@@ -40,6 +33,11 @@ type Bundler struct {
 // Run will execute the bundler process by calling the BundleMapper function and
 // then running the set of optimizers.
 func (b *Bundler) Run() error {
+	os.RemoveAll(b.OutputDir)
+	if err := writePublicFolder(b.Config); err != nil {
+		return err
+	}
+
 	bundles, err := BundleMapper(MapRequest{
 		Manifest: b.Manifest,
 		Config:   b.Config,
@@ -54,17 +52,30 @@ func (b *Bundler) Run() error {
 			return err
 		}
 	}
-	return b.writeManifest(bundles)
+	m := b.manifest(bundles)
+	if err := writeHTMLSources(b.Config, m); err != nil {
+		return err
+	}
+	return b.writeManifest(m)
 }
 
-func (b *Bundler) writeManifest(bundles []*Bundle) error {
-	m := Manifest{Config: b.Config, Entrypoints: map[string][]string{}}
-	m.HTML = b.html(bundles)
+func (b *Bundler) manifest(bundles []*Bundle) *Manifest {
+	m := &Manifest{
+		BaseURL:     b.BaseURL,
+		Bundles:     []string{},
+		Entrypoints: map[string][]string{},
+		BundleTypes: map[string][]string{},
+	}
 	for _, bn := range bundles {
 		m.Bundles = append(m.Bundles, bn.URL)
 		m.Entrypoints[bn.Name] = append(m.Entrypoints[bn.Name], bn.URL)
+		m.BundleTypes[bn.Type] = append(m.BundleTypes[bn.Type], bn.URL)
 	}
-	src := filepath.Join(b.OutputDir, ".jbld-bundle-manifest")
+	return m
+}
+
+func (b *Bundler) writeManifest(m *Manifest) error {
+	src := filepath.Join(b.OutputDir, "asset-manifest.json")
 	f, err := os.OpenFile(src, os.O_CREATE|os.O_RDWR, 0700)
 	if err != nil {
 		return err
@@ -74,30 +85,4 @@ func (b *Bundler) writeManifest(bundles []*Bundle) error {
 	enc.SetEscapeHTML(false)
 	enc.SetIndent("", "  ")
 	return enc.Encode(m)
-}
-
-func (b *Bundler) html(bundles []*Bundle) string {
-	chunkMap := map[string]bool{}
-	for _, bn := range bundles {
-		chunkMap[bn.URL] = true
-	}
-	chunks, _ := json.Marshal(chunkMap)
-	out := []string{
-		fmt.Sprintf("<script>window.__chunks=%s</script>", string(chunks)),
-	}
-	for _, bn := range bundles {
-		switch bn.Type {
-		case "css":
-			out = append(out, fmt.Sprintf(
-				"<link rel=\"stylesheet\" type=\"text/css\" href=\"%s\">",
-				bn.URL,
-			))
-		case "js":
-			out = append(out, fmt.Sprintf(
-				"<script type=\"application/javascript\" src=\"%s\"></script>",
-				bn.URL,
-			))
-		}
-	}
-	return strings.Join(out, "\n")
 }

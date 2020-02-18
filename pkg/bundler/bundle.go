@@ -27,7 +27,7 @@ const (
 )
 
 // BundleID references a Bundle.
-type BundleID struct{ BaseURL, FullName, URL, Name, Type, Hash string }
+type BundleID struct{ FullName, URL, Name, Type, Hash string }
 
 // MarshalJSON implements the marshalling interface.
 func (b BundleID) MarshalJSON() ([]byte, error) {
@@ -48,27 +48,30 @@ type BundleCreate struct {
 func NewBundle(r BundleCreate) *Bundle {
 	b := &Bundle{
 		BundleID: BundleID{
-			Name:    r.Name,
-			Type:    r.Type,
-			BaseURL: r.Config.BaseURL,
+			Name: r.Name,
+			Type: r.Type,
 		},
-		Main:    r.Main,
-		Files:   r.Files,
-		Resolve: r.Manifest.Resolve,
+		BaseURL:  r.Config.BaseURL,
+		AssetDir: r.Config.AssetDir,
+		Main:     r.Main,
+		Files:    r.Files,
+		Resolve:  r.Manifest.Resolve,
 	}
 	b.setHash()
-	b.FullName = b.Name + "." + b.Hash + "." + b.Type
-	b.URL = filepath.Join(b.BaseURL, b.FullName)
+	b.FullName = b.Name + "-" + b.Hash + "." + b.Type
+	b.URL = filepath.Join(b.BaseURL, b.AssetDir, b.FullName)
 	return b
 }
 
 // Bundle represents an individual bundle.
 type Bundle struct {
 	BundleID
-	Main    string            `json:"main"`
-	Files   []compiler.File   `json:"files"`
-	Bundles []BundleID        `json:"bundles"`
-	Resolve map[string]string `json:"resolve"`
+	BaseURL  string
+	AssetDir string
+	Main     string
+	Files    []compiler.File
+	Bundles  []BundleID
+	Resolve  map[string]string
 }
 
 // AddDependent adds a dependent chunk.
@@ -90,7 +93,8 @@ func (b *Bundle) setHash() {
 }
 
 // Run executes the bundler process.
-func (b *Bundle) Run(srcDir, dstDir string) error {
+func (b *Bundle) Run(srcDir, outputDir string) error {
+	dstDir := filepath.Join(outputDir, b.AssetDir)
 	t1 := time.Now()
 	os.MkdirAll(dstDir, 0700)
 	src := filepath.Join(dstDir, b.FullName)

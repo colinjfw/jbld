@@ -34,7 +34,11 @@ func TestCompiler(t *testing.T) {
 	})
 
 	b := &bundler.Bundler{Config: bundler.Config{
-		OutputDir: cwd + "/dist/bundle",
+		BaseURL:     "/public",
+		AssetDir:    "static",
+		OutputDir:   cwd + "/dist/bundle",
+		PublicDir:   cwd + "/public",
+		HTMLSources: []string{"index.html"},
 	}}
 	b.Manifest = m
 	t.Run("Bundler", func(t *testing.T) {
