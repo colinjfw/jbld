@@ -1,17 +1,25 @@
-const { BabelPlugin } = require("../../lib/babel");
+const { BabelPlugin, ImportManglePlugin } = require("../../lib/babel");
 const { Configuration } = require("../../lib");
 
 const babel = new BabelPlugin({
-  presets: ["react-app"],
-  plugins: ["transform-node-env-inline", "@babel/plugin-transform-modules-commonjs"]
+  comments: false,
+  presets: [
+    "react-app",
+    "minify",
+  ],
+  plugins: [
+    "@babel/plugin-transform-modules-commonjs",
+  ]
 });
+
 
 module.exports = new Configuration({
   options: {
     logConfig: true,
     serve: ":3000",
+    mode: "production",
     bundler: {
-      baseUrl: "",
+      baseUrl: "/",
       outputDir: "./dist/bundle",
       assetPath: "static",
       public: {
@@ -23,7 +31,7 @@ module.exports = new Configuration({
       sourceDir: ".",
       outputDir: "./dist/target",
       entrypoints: ["src/index.js"],
-      workers: 50,
+      workers: 5,
     },
   },
   rules: [

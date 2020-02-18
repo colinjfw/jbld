@@ -17,11 +17,12 @@ import (
 
 // Options represents a unioned configuration.
 type Options struct {
-	LogConfig bool            `json:"logConfig"`
-	Watch     bool            `json:"watch"`
-	Serve     string          `json:"serve"`
-	Bundler   bundler.Config  `json:"bundler"`
-	Compiler  compiler.Config `json:"compiler"`
+	Watch    bool              `json:"watch"`
+	Serve    string            `json:"serve"`
+	Mode     string            `json:"mode"`
+	Env      map[string]string `json:"env"`
+	Bundler  bundler.Config    `json:"bundler"`
+	Compiler compiler.Config   `json:"compiler"`
 }
 
 // Run executes a full pipeline.
@@ -57,8 +58,14 @@ func (c *Options) withDefaults() {
 	if err != nil {
 		panic(err)
 	}
+	if c.Mode == "" {
+		c.Mode = "production"
+	}
 	if c.Bundler.AssetPath == "" {
 		c.Bundler.AssetPath = "static"
+	}
+	if c.Bundler.BaseURL == "" {
+		c.Bundler.BaseURL = "/"
 	}
 	if c.Serve != "" {
 		c.Watch = true
@@ -88,10 +95,13 @@ func loadOptions(hostJS, configFile string) (*Options, error) {
 	conf.Compiler.HostJS = hostJS
 	conf.Compiler.ConfigFile = configFile
 
-	if conf.LogConfig {
-		data, _ := json.MarshalIndent(conf, "", "  ")
-		log.Printf("run: configuration\n%s", string(data))
+	os.Setenv("NODE_ENV", conf.Mode)
+	for k, v := range conf.Env {
+		os.Setenv(k, v)
 	}
+
+	data, _ := json.MarshalIndent(conf, "", "  ")
+	log.Printf("run: configuration\n%s", string(data))
 	return conf, nil
 }
 

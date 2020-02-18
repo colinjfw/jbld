@@ -39,6 +39,7 @@ type Config struct {
 	SourceDir   string   `json:"sourceDir"`
 	OutputDir   string   `json:"outputDir"`
 	Workers     int      `json:"workers"`
+	Env         []string `json:"env"`
 }
 
 // Version describes a unique hash for this config.

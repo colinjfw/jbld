@@ -21,6 +21,7 @@ const (
 	bodySuffix    = "})();\n"
 	modPrefix     = "  __modules.define(%s, function(module, exports, require) {"
 	modSuffix     = "});\n"
+	modLink       = "module.exports=%s;"
 	resolvePrefix = "  Object.assign(__modules.resolve,"
 	resolveSuffix = ");\n"
 	mainStr       = "  __modules.main(%s, %s);\n"
@@ -147,8 +148,14 @@ func (b *Bundle) bundleJS(w *bufio.Writer, srcDir string) error {
 		return err
 	}
 	for _, f := range b.Files {
-		if err := b.bundleFile(srcDir, w, f); err != nil {
-			return err
+		if f.Object.Type == "js" {
+			if err := b.bundleFile(srcDir, w, f); err != nil {
+				return err
+			}
+		} else {
+			if err := b.bundleJSLink(srcDir, w, f); err != nil {
+				return err
+			}
 		}
 	}
 	if err := b.bundleMain(w); err != nil {
@@ -204,6 +211,30 @@ func (b *Bundle) bundleResolve(w *bufio.Writer) error {
 		return err
 	}
 	return err
+}
+
+func (b *Bundle) bundleJSLink(srcDir string, w *bufio.Writer, file compiler.File) error {
+	src := filepath.Join(srcDir, file.Name)
+	f, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = w.WriteString(fmt.Sprintf(modPrefix, strconv.Quote(file.Name)))
+	if err != nil {
+		return err
+	}
+	_, err = w.WriteString(fmt.Sprintf(modLink, strconv.Quote(
+		filepath.Join(b.BaseURL, b.AssetPath, file.Name),
+	)))
+	if err != nil {
+		return err
+	}
+	_, err = w.WriteString(modSuffix)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (b *Bundle) bundleFile(srcDir string, w *bufio.Writer, file compiler.File) error {

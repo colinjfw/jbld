@@ -45,44 +45,49 @@ func (s *bundleMapper) traverse(f compiler.File, emit func(f compiler.File)) {
 	}
 }
 
-func (s *bundleMapper) traverseCollect(f compiler.File) map[string][]compiler.File {
+func (s *bundleMapper) traverseCollect(f compiler.File) ([]compiler.File, []compiler.File) {
 	seen := map[string]bool{}
-	out := map[string][]compiler.File{}
+	js := []compiler.File{}
+	css := []compiler.File{}
 	s.traverse(f, func(n compiler.File) {
 		if !seen[n.Name] {
-			out[n.Object.Type] = append(out[n.Object.Type], n)
+			js = append(js, n)
+			if n.Object.Type == "css" {
+				css = append(css, n)
+			}
 		}
 		seen[n.Name] = true
 	})
-	return out
+	return js, css
 }
 
 func (s *bundleMapper) run() ([]*Bundle, error) {
 	var bundles []*Bundle
 	for _, entry := range s.Manifest.Config.Entrypoints {
-		var group []*Bundle
-		for typ, files := range s.traverseCollect(s.fileMap[entry]) {
-			name := s.nameEntrypoint(entry)
-			group = append(group,
-				NewBundle(BundleCreate{
-					Manifest: s.Manifest,
-					Config:   s.Config,
-					Type:     typ,
-					Name:     name,
-					Main:     entry,
-					Files:    files,
-				}),
-			)
+		jsFiles, cssFiles := s.traverseCollect(s.fileMap[entry])
+		name := s.nameEntrypoint(entry)
+		js := NewBundle(BundleCreate{
+			Manifest: s.Manifest,
+			Config:   s.Config,
+			Type:     "js",
+			Name:     name,
+			Main:     entry,
+			Files:    jsFiles,
+		})
+		bundles = append(bundles, js)
+
+		if len(cssFiles) > 0 {
+			css := NewBundle(BundleCreate{
+				Manifest: s.Manifest,
+				Config:   s.Config,
+				Type:     "css",
+				Name:     name,
+				Main:     entry,
+				Files:    cssFiles,
+			})
+			bundles = append(bundles, css)
+			js.AddDependent(css.BundleID)
 		}
-		for i, b := range group {
-			for i2, b2 := range group {
-				if i == i2 {
-					continue
-				}
-				b.AddDependent(b2.BundleID)
-			}
-		}
-		bundles = append(bundles, group...)
 	}
 	return bundles, nil
 }
