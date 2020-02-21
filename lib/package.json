@@ -1,5 +1,23 @@
 {
   "name": "jbld",
+  "version": "0.0.2",
   "license": "MIT",
+  "main": "index.js",
+  "typings": "index.d.ts",
+  "files": [
+    "bin/*",
+    "babel.js",
+    "host.js",
+    "index.js",
+    "index.d.ts",
+    "post-install.js"
+  ],
+  "bin": {
+    "jbld": "jbld"
+  },
+  "scripts": {
+    "prepack": "./build.sh",
+    "postinstall": "node ./post-install.js"
+  },
   "dependencies": {}
 }

@@ -15,24 +15,9 @@ const babel = new BabelPlugin({
 
 module.exports = new Configuration({
   options: {
-    logConfig: true,
-    serve: ":3000",
-    mode: "production",
-    bundler: {
-      baseUrl: "/",
-      outputDir: "./dist/bundle",
-      assetPath: "static",
-      public: {
-        dir: "./public",
-        html: ["index.html"],
-      }
-    },
-    compiler: {
-      sourceDir: ".",
-      outputDir: "./dist/target",
-      entrypoints: ["src/index.js"],
-      workers: 5,
-    },
+    baseUrl: "/",
+    entrypoints: ["src/index.js"],
+    workers: 5,
   },
   rules: [
     {

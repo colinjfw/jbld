@@ -33,13 +33,12 @@ type Object struct {
 
 // Config represents a compiler configuration.
 type Config struct {
-	HostJS      string   `json:"hostJS"`
+	HostJS      string   `json:"hostJs"`
 	ConfigFile  string   `json:"configFile"`
 	Entrypoints []string `json:"entrypoints"`
 	SourceDir   string   `json:"sourceDir"`
 	OutputDir   string   `json:"outputDir"`
 	Workers     int      `json:"workers"`
-	Env         []string `json:"env"`
 }
 
 // Version describes a unique hash for this config.

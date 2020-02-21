@@ -2,6 +2,7 @@ package bundler
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 
@@ -39,7 +40,7 @@ type Bundler struct {
 func (b *Bundler) Run() error {
 	os.RemoveAll(b.OutputDir)
 	if err := writePublicFolder(b.Config); err != nil {
-		return err
+		return errors.New("bundler: public folder not found")
 	}
 
 	bundles, err := BundleMapper(MapRequest{

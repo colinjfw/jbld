@@ -172,7 +172,9 @@ func (fw *fileWriter) write(f File) {
 	fw.lock.Lock()
 	fw.files = append(fw.files, f)
 	for _, imp := range f.Object.Imports {
-		fw.resolve[imp.Name] = imp.Resolved
+		if imp.Name != imp.Resolved {
+			fw.resolve[imp.Name] = imp.Resolved
+		}
 	}
 	fw.lock.Unlock()
 }

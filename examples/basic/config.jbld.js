@@ -19,6 +19,9 @@ const babel = new BabelPlugin({
 });
 
 module.exports = new Configuration({
+  options: {
+    public: null
+  },
   rules: [
     {
       test: /\.js$/,

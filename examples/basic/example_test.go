@@ -1,45 +1,26 @@
-package example
+package main_test
 
 import (
 	"os"
+	"os/exec"
+	"path/filepath"
 	"testing"
 
-	"github.com/colinjfw/jbld/pkg/bundler"
-	"github.com/colinjfw/jbld/pkg/compiler"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCompiler(t *testing.T) {
-	os.RemoveAll("./lib")
 	os.RemoveAll("./dist")
 	cwd, _ := os.Getwd()
 
-	c := &compiler.Compiler{Config: compiler.Config{
-		HostJS:      cwd + "/../../lib/host.js",
-		ConfigFile:  cwd + "/config.jbld.js",
-		SourceDir:   cwd,
-		OutputDir:   cwd + "/lib",
-		Entrypoints: []string{"src/index.js"},
-		Workers:     2,
-	}}
-	var err error
-	var m *compiler.Manifest
+	build := exec.Command("./build.sh")
+	build.Stderr = os.Stderr
+	build.Stdout = os.Stdout
+	build.Dir = filepath.Join(cwd, "..", "..", "lib")
+	require.NoError(t, build.Run())
 
-	t.Run("Normal", func(t *testing.T) {
-		m, err = c.Run()
-		require.NoError(t, err)
-	})
-	t.Run("Cached", func(t *testing.T) {
-		m, err = c.Run()
-		require.NoError(t, err)
-	})
-
-	b := &bundler.Bundler{Config: bundler.Config{
-		BaseURL:   "/public/",
-		OutputDir: "./dist",
-	}}
-	b.Manifest = m
-	t.Run("Bundler", func(t *testing.T) {
-		require.NoError(t, b.Run())
-	})
+	run := exec.Command("../../lib/cli.js")
+	run.Stderr = os.Stderr
+	run.Stdout = os.Stdout
+	require.NoError(t, run.Run())
 }

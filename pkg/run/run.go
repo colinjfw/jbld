@@ -5,15 +5,17 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/colinjfw/jbld/pkg/bundler"
 	"github.com/colinjfw/jbld/pkg/compiler"
-	"github.com/colinjfw/jbld/pkg/host"
 	"github.com/radovskyb/watcher"
 )
+
+func init() {
+	log.SetFlags(log.Lshortfile)
+}
 
 // Options represents a unioned configuration.
 type Options struct {
@@ -26,12 +28,7 @@ type Options struct {
 }
 
 // Run executes a full pipeline.
-func Run(hostJS, configFile string) error {
-	conf, err := loadOptions(hostJS, configFile)
-	if err != nil {
-		return err
-	}
-
+func Run(conf *Options) error {
 	if conf.Serve != "" {
 		go serve(conf.Serve, conf.Bundler.OutputDir)
 	}
@@ -43,63 +40,15 @@ func Run(hostJS, configFile string) error {
 	return run(conf)
 }
 
-func defaultDir(cwd, val, def string) string {
-	if val == "" {
-		return def
-	}
-	if val[0] == '/' {
-		return val
-	}
-	return filepath.Join(cwd, val)
-}
-
-func (c *Options) withDefaults() {
-	cwd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	if c.Mode == "" {
-		c.Mode = "production"
-	}
-	if c.Bundler.AssetPath == "" {
-		c.Bundler.AssetPath = "static"
-	}
-	if c.Bundler.BaseURL == "" {
-		c.Bundler.BaseURL = "/"
-	}
-	if c.Serve != "" {
-		c.Watch = true
-	}
-	c.Bundler.OutputDir = defaultDir(cwd, c.Bundler.OutputDir, filepath.Join(cwd, "dist", "bundle"))
-	c.Compiler.OutputDir = defaultDir(cwd, c.Compiler.OutputDir, filepath.Join(cwd, "dist", "target"))
-	c.Compiler.SourceDir = defaultDir(cwd, c.Compiler.SourceDir, filepath.Join(cwd, "src"))
-
-	if c.Compiler.Workers == 0 {
-		c.Compiler.Workers = 5
-	}
-	if len(c.Compiler.Entrypoints) == 0 {
-		c.Compiler.Entrypoints = []string{"index.js"}
-	}
-}
-
-func loadOptions(hostJS, configFile string) (*Options, error) {
-	h := host.NewHost(hostJS, configFile)
+func LoadOptions(opts string) (*Options, error) {
 	conf := &Options{}
-	if err := h.Run("options", struct{}{}, conf); err != nil {
-		h.Close()
+	if err := json.Unmarshal([]byte(opts), conf); err != nil {
 		return nil, err
 	}
-	h.Close()
-
-	conf.withDefaults()
-	conf.Compiler.HostJS = hostJS
-	conf.Compiler.ConfigFile = configFile
-
 	os.Setenv("NODE_ENV", conf.Mode)
 	for k, v := range conf.Env {
 		os.Setenv(k, v)
 	}
-
 	data, _ := json.MarshalIndent(conf, "", "  ")
 	log.Printf("run: configuration\n%s", string(data))
 	return conf, nil
