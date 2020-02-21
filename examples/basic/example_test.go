@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	_ "github.com/colinjfw/jbld/pkg/run"
 	"github.com/stretchr/testify/require"
 )
 

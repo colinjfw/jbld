@@ -13,9 +13,7 @@ import (
 	"github.com/radovskyb/watcher"
 )
 
-func init() {
-	log.SetFlags(log.Lshortfile)
-}
+func init() { log.SetFlags(0) }
 
 // Options represents a unioned configuration.
 type Options struct {
@@ -40,12 +38,15 @@ func Run(conf *Options) error {
 	return run(conf)
 }
 
+// LoadOptions loads a set of options from JSON.
 func LoadOptions(opts string) (*Options, error) {
 	conf := &Options{}
 	if err := json.Unmarshal([]byte(opts), conf); err != nil {
 		return nil, err
 	}
-	os.Setenv("NODE_ENV", conf.Mode)
+	if conf.Mode != "" {
+		conf.Env["NODE_ENV"] = conf.Mode
+	}
 	for k, v := range conf.Env {
 		os.Setenv(k, v)
 	}
