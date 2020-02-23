@@ -1,4 +1,4 @@
-const { BabelPlugin, ImportManglePlugin } = require("../../lib/babel");
+const { BabelPlugin } = require("../../lib/babel");
 const { Configuration } = require("../../lib");
 
 const babel = new BabelPlugin({
@@ -8,6 +8,7 @@ const babel = new BabelPlugin({
     "minify",
   ],
   plugins: [
+    "transform-inline-environment-variables",
     "@babel/plugin-transform-modules-commonjs",
   ]
 });

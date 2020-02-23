@@ -1054,14 +1054,6 @@ invariant@^2.2.2, invariant@^2.2.4:
   dependencies:
     loose-envify "^1.0.0"
 
-jbld@../../lib/jbld-0.0.1.tgz:
-  version "0.0.1"
-  resolved "../../lib/jbld-0.0.1.tgz#a970c8dd295b4614668d44cfa114c9d727f5da38"
-
-jbld@../../lib/jbld-0.0.2.tgz:
-  version "0.0.2"
-  resolved "../../lib/jbld-0.0.2.tgz#3bae4c55e785eb86cf1a6da310456d817fc57016"
-
 "js-tokens@^3.0.0 || ^4.0.0", js-tokens@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/js-tokens/-/js-tokens-4.0.0.tgz#19203fb59991df98e3a287050d4647cdeaf32499"

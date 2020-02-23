@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/colinjfw/jbld/pkg/compiler"
@@ -102,30 +103,48 @@ func (b *Bundle) Run(srcDir, outputDir string) error {
 
 	var w *bufio.Writer
 	{
-		f, err := os.OpenFile(src, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0700)
+		switch b.Type {
+		case "js", "css":
+			f, err := os.OpenFile(src, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0700)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+			w = bufio.NewWriter(f)
+		}
+	}
+
+	{
+		var err error
+		switch b.Type {
+		case "js":
+			err = b.bundleJS(w, srcDir)
+		case "css":
+			err = b.bundleRaw(w, srcDir)
+		default:
+			err = b.bundleURL(w, srcDir, dstDir)
+		}
 		if err != nil {
 			return err
 		}
-		defer f.Close()
-		w = bufio.NewWriter(f)
 	}
 
-	if b.Type == "js" {
-		if err := b.bundleJS(w, srcDir); err != nil {
-			return err
-		}
-	} else if b.Type == "css" {
-		if err := b.bundleRaw(w, srcDir); err != nil {
-			return err
-		}
-	} else {
-		panic("TODO: Handle URLs")
-	}
-
-	log.Printf("bundler: entrypoint %s bundled %d files in %v",
-		b.Name, len(b.Files), time.Since(t1),
+	log.Printf("bundler: entrypoint %s[%s] bundled %d files in %v",
+		b.Name, b.Type, len(b.Files), time.Since(t1),
 	)
-	return w.Flush()
+	if w != nil {
+		return w.Flush()
+	}
+	return nil
+}
+
+func (b *Bundle) bundleURL(w *bufio.Writer, srcDir, dstDir string) error {
+	for _, f := range b.Files {
+		if err := b.bundleURLFile(srcDir, dstDir, f); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (b *Bundle) bundleRaw(w *bufio.Writer, srcDir string) error {
@@ -224,9 +243,7 @@ func (b *Bundle) bundleJSLink(srcDir string, w *bufio.Writer, file compiler.File
 	if err != nil {
 		return err
 	}
-	_, err = w.WriteString(fmt.Sprintf(modLink, strconv.Quote(
-		filepath.Join(b.BaseURL, b.AssetPath, file.Name),
-	)))
+	_, err = w.WriteString(fmt.Sprintf(modLink, strconv.Quote(b.assetURL(file))))
 	if err != nil {
 		return err
 	}
@@ -272,4 +289,39 @@ func (b *Bundle) bundleRawFile(srcDir string, w *bufio.Writer, file compiler.Fil
 	}
 	_, err = w.WriteString("\n")
 	return err
+}
+
+func (b *Bundle) bundleURLFile(srcDir string, dstDir string, file compiler.File) error {
+	src := filepath.Join(srcDir, file.Name)
+	dst := filepath.Join(dstDir, b.assetName(file))
+	err := os.MkdirAll(filepath.Dir(dst), 0700)
+	if err != nil {
+		return err
+	}
+	srcF, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcF.Close()
+	dstF, err := os.OpenFile(dst, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0700)
+	if err != nil {
+		return err
+	}
+	defer dstF.Close()
+	_, err = io.Copy(dstF, srcF)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func (b *Bundle) assetName(file compiler.File) string {
+	base := filepath.Base(file.Name)
+	e := filepath.Ext(base)
+	name := strings.TrimSuffix(base, e)
+	return name + "-" + file.Object.Hash + e
+}
+
+func (b *Bundle) assetURL(file compiler.File) string {
+	return filepath.Join(b.BaseURL, b.AssetPath, b.assetName(file))
 }

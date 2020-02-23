@@ -43,10 +43,10 @@ func (b *Bundler) Run() error {
 		return errors.New("bundler: public folder not found")
 	}
 
-	bundles, err := BundleMapper(MapRequest{
-		Manifest: b.Manifest,
+	bundles, err := (&bundleMapper{
+		manifest: b.Manifest,
 		Config:   b.Config,
-	})
+	}).run()
 	if err != nil {
 		return err
 	}
