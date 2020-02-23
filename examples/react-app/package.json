@@ -1,0 +1,32 @@
+{
+  "name": "react-app",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "babel-plugin-transform-inline-environment-variables": "0.4.3",
+    "babel-preset-minify": "0.5.1",
+    "babel-preset-react-app": "9.1.1",
+    "react": "16.12.0",
+    "react-dom": "16.12.0",
+    "jbld": "0.0.4"
+  },
+  "scripts": {
+    "start": "jbld --watch --serve :3000",
+    "build": "jbld --mode production"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
