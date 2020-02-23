@@ -7,12 +7,7 @@ import (
 )
 
 func main() {
-	opts, err := run.LoadOptions(os.Args[1])
-	if err != nil {
-		println(err.Error())
-		os.Exit(1)
-	}
-	err = run.Run(opts)
+	err := run.Run(os.Args[1])
 	if err != nil {
 		println(err.Error())
 		os.Exit(1)

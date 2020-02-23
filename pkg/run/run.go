@@ -26,7 +26,11 @@ type Options struct {
 }
 
 // Run executes a full pipeline.
-func Run(conf *Options) error {
+func Run(opts string) error {
+	conf, err := loadOptions(opts)
+	if err != nil {
+		return err
+	}
 	if conf.Serve != "" {
 		go serve(conf.Serve, conf.Bundler.OutputDir)
 	}
@@ -38,8 +42,7 @@ func Run(conf *Options) error {
 	return run(conf)
 }
 
-// LoadOptions loads a set of options from JSON.
-func LoadOptions(opts string) (*Options, error) {
+func loadOptions(opts string) (*Options, error) {
 	conf := &Options{}
 	if err := json.Unmarshal([]byte(opts), conf); err != nil {
 		return nil, err

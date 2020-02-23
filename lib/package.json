@@ -1,14 +1,16 @@
 {
   "name": "jbld",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "license": "MIT",
   "main": "index.js",
   "typings": "index.d.ts",
+  "repository": "https://github.com/colinjfw/jbld",
+  "description": "Very fast and efficient Javascript compilation tool and bundler. A replacement for webpack.",
   "files": [
     "bin/*",
+    "LICENSE",
     "babel.js",
     "cli.js",
-    "target.js",
     "host.js",
     "index.js",
     "index.d.ts"
