@@ -10,9 +10,10 @@ without sacrificing performance.
 
 Try it out on a project built with create-react-app:
 
-1. `git clone https://github.com/colinjfw/jbld`
-2. `cd examples/react-app`
-3. `yarn start`
+    git clone https://github.com/colinjfw/jbld
+    cd examples/react-app
+    yarn install
+    yarn start
 
 ## Status
 
