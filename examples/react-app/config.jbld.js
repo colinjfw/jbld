@@ -13,7 +13,6 @@ const babel = new BabelPlugin({
   ]
 });
 
-
 module.exports = new Configuration({
   options: {
     baseUrl: "/",
