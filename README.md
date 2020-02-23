@@ -57,6 +57,8 @@ module.exports = new Configuration({
 });
 ```
 
+[View the full set of configuration options](lib/index.d.ts).
+
 ## How it works
 
 Jbld is logically separated into two components:
