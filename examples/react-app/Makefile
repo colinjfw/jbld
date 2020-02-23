@@ -4,7 +4,7 @@ install:
 
 test:
 	../../lib/cli.js --clean
-	../../lib/cli.js --clean
+	../../lib/cli.js
 .PHONY: test
 
 start:
